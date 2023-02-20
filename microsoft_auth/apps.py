@@ -9,6 +9,7 @@ from django.test import RequestFactory
 class MicrosoftAuthConfig(AppConfig):
     name = "microsoft_auth"
     verbose_name = "Microsoft Auth"
+    default_auto_field = 'django.db.models.AutoField'
 
 
 @register()

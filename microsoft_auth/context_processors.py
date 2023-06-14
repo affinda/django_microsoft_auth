@@ -43,16 +43,19 @@ def microsoft(request):
 
     # Initialize Microsoft client using dict with CSRF token and optional
     # next path as state variable
-    next_ = request.GET.get("next")
-    state = {"token": get_token(request)}
-    if next_:
-        state["next"] = next_
-
-    signed_state = dumps(state, salt="microsoft_auth")
-    microsoft = MicrosoftClient(state=signed_state, request=request)
-    auth_url = microsoft.authorization_url()[0]
+    if config.MICROSOFT_AUTH_LOGIN_ENABLED:
+        next_ = request.GET.get("next")
+        state = {"token": get_token(request)}
+        if next_:
+            state["next"] = next_
+        signed_state = dumps(state, salt="microsoft_auth")
+        microsoft = MicrosoftClient(state=signed_state, request=request)
+        auth_url = microsoft.authorization_url()[0]
+        return {
+            "microsoft_login_enabled": config.MICROSOFT_AUTH_LOGIN_ENABLED,
+            "microsoft_authorization_url": mark_safe(auth_url),  # nosec
+            "microsoft_login_type_text": login_type,
+        }
     return {
         "microsoft_login_enabled": config.MICROSOFT_AUTH_LOGIN_ENABLED,
-        "microsoft_authorization_url": mark_safe(auth_url),  # nosec
-        "microsoft_login_type_text": login_type,
     }

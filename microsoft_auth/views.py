@@ -29,17 +29,9 @@ class AuthenticateCallbackView(View):
     """
 
     messages = {
-        "bad_state": _(
-            "An invalid state variable was provided. "
-            "Please refresh the page and try again later."
-        ),
-        "missing_code": _(
-            "No authentication code was provided from " "Microsoft. Please try again."
-        ),
-        "login_failed": _(
-            "Failed to authenticate you for an unknown reason. "
-            "Please try again later."
-        ),
+        "bad_state": _("An invalid state variable was provided. " "Please refresh the page and try again later."),
+        "missing_code": _("No authentication code was provided from " "Microsoft. Please try again."),
+        "login_failed": _("Failed to authenticate you for an unknown reason. " "Please try again later."),
     }
 
     # manually mark methods csrf_exempt to handle CSRF processing ourselves
@@ -48,14 +40,26 @@ class AuthenticateCallbackView(View):
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        domain = Site.objects.get_current(self.request).domain
+        from django.conf import settings
 
-        scheme = get_scheme(self.request)
+        if "django_hosts" in settings.INSTALLED_APPS:
+            subdomain = settings.MICROSOFT_AUTH_REDIRECT_HOST or ""
+            host = self.request.get_host()  # includes port if required
+            if "localhost" in host and self.request.scheme == "http":
+                subdomain = ""  # e.g. Don't use admin.localhost as MS doens't like http
 
-        self.context = {
-            "base_url": "{0}://{1}/".format(scheme, domain),
-            "message": {},
-        }
+            self.context = {
+                "base_url": f"{self.request.scheme}://{f'{subdomain}.' if subdomain else ''}{host}/",
+                "message": {},
+            }
+
+        else:
+            domain = Site.objects.get_current(self.request).domain
+            scheme = get_scheme(self.request)
+            self.context = {
+                "base_url": "{0}://{1}/".format(scheme, domain),
+                "message": {},
+            }
 
         # validates state using Django CSRF system and sets next path value
         state = self._parse_state(kwargs.get("state"))
@@ -64,29 +68,20 @@ class AuthenticateCallbackView(View):
             self.context["next"] = state["next"]
 
         # validates response from Microsoft
-        self._check_microsoft_response(
-            kwargs.get("error"), kwargs.get("error_description")
-        )
+        self._check_microsoft_response(kwargs.get("error"), kwargs.get("error_description"))
 
         # validates the code param and logs user in
         self._authenticate(kwargs.get("code"))
 
         # populates error_description if it does not exist yet
-        if (
-            "error" in self.context["message"]
-            and "error_description" not in self.context["message"]
-        ):
-            self.context["message"]["error_description"] = self.messages[
-                self.context["message"]["error"]
-            ]
+        if "error" in self.context["message"] and "error_description" not in self.context["message"]:
+            self.context["message"]["error_description"] = self.messages[self.context["message"]["error"]]
 
         function = get_hook("MICROSOFT_AUTH_CALLBACK_HOOK")
         if function is not None:
             self.context = function(self.request, self.context)
 
-        self.context["message"] = mark_safe(  # nosec
-            json.dumps({"microsoft_auth": self.context["message"]})
-        )
+        self.context["message"] = mark_safe(json.dumps({"microsoft_auth": self.context["message"]}))  # nosec
         return self.context
 
     def _parse_state(self, state):

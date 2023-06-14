@@ -15,6 +15,8 @@ logger = logging.getLogger("django")
 
 def microsoft(request):
     """Adds global template variables for microsoft_auth"""
+    from django.conf import settings
+
     login_type = None
     if config.MICROSOFT_AUTH_LOGIN_TYPE == LOGIN_TYPE_XBL:
         login_type = _("Xbox Live")
@@ -31,9 +33,10 @@ def microsoft(request):
                 "Microsoft authentication may not work.\n"
             )
         else:
-            do_warning = get_scheme(
-                request
-            ) == "http" and not current_domain.startswith("localhost")
+            if "django_hosts" in settings.INSTALLED_APPS:
+                do_warning = request.scheme == "http" and not request.get_host().startswith("localhost")
+            else:
+                do_warning = get_scheme(request) == "http" and not current_domain.startswith("localhost")
             if do_warning:  # pragma: no branch
                 logger.warning(
                     "\nWARNING:\nYou are not using HTTPS. Microsoft "

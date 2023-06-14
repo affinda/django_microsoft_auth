@@ -34,7 +34,7 @@ def microsoft(request):
             )
         else:
             if "django_hosts" in settings.INSTALLED_APPS:
-                do_warning = request.scheme == "http" and not request.get_host().startswith("localhost")
+                do_warning = request.scheme == "http" and not settings.PARENT_HOST.startswith("localhost")
             else:
                 do_warning = get_scheme(request) == "http" and not current_domain.startswith("localhost")
             if do_warning:  # pragma: no branch

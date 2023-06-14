@@ -1,6 +1,6 @@
 import json
-from unittest.mock import Mock, patch
 import urllib.parse
+from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
 
 from django.contrib.sites.models import Site
@@ -30,9 +30,7 @@ class ClientTests(TestCase):
 
         self.factory = RequestFactory()
 
-    def _get_auth_url(
-        self, base_url, scopes=MicrosoftClient.SCOPE_MICROSOFT, extra_args=None
-    ):
+    def _get_auth_url(self, base_url, scopes=MicrosoftClient.SCOPE_MICROSOFT, extra_args=None):
         if extra_args is None:
             extra_args = {}
         if len(extra_args) != 0 and type(extra_args) != dict:
@@ -102,9 +100,7 @@ class ClientTests(TestCase):
     )
     def test_authorization_url_with_xbl(self):
         base_url = MicrosoftClient._xbox_authorization_url
-        expected_auth_url = self._get_auth_url(
-            base_url, scopes=MicrosoftClient.SCOPE_XBL
-        )
+        expected_auth_url = self._get_auth_url(base_url, scopes=MicrosoftClient.SCOPE_XBL)
 
         auth_client = MicrosoftClient(state=STATE)
         self._assert_auth_url(expected_auth_url, auth_client.authorization_url())
@@ -267,9 +263,7 @@ class ClientTests(TestCase):
     def test_extra_url_params(self):
         auth_client = MicrosoftClient(state=STATE)
         base_url = auth_client.openid_config["authorization_endpoint"]
-        expected_auth_url = self._get_auth_url(
-            base_url, extra_args={"prompt": "select_account"}
-        )
+        expected_auth_url = self._get_auth_url(base_url, extra_args={"prompt": "select_account"})
         self._assert_auth_url(expected_auth_url, auth_client.authorization_url())
 
     @override_settings(MICROSOFT_AUTH_CLIENT_ID=CLIENT_ID)

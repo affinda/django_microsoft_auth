@@ -20,9 +20,7 @@ from .test_conf import ConfTests
 pytest.importorskip("constance")
 
 
-@modify_settings(
-    INSTALLED_APPS={"prepend": ["constance", "constance.backends.database"]}
-)
+@modify_settings(INSTALLED_APPS={"prepend": ["constance", "constance.backends.database"]})
 class ConstanceTests(TestCase):
     def test_constance_admin(self):
         self.client.get("/admin/constance/config/")
@@ -33,12 +31,10 @@ class ConstanceTests(TestCase):
         init_config()
 
         with self.assertRaises(AttributeError):
-            config.NOT_A_REAL_SETTING
+            config.NOT_A_REAL_SETTING  # noqa B018
 
 
-@modify_settings(
-    INSTALLED_APPS={"prepend": ["constance", "constance.backends.database"]}
-)
+@modify_settings(INSTALLED_APPS={"prepend": ["constance", "constance.backends.database"]})
 class ConstanceConfTests(ConfTests):
     def setUp(self):
         super().setUp()

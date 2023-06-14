@@ -1,12 +1,12 @@
 import json
 import logging
 
+import jwt
+import requests
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.urls import reverse
-import jwt
 from jwt.algorithms import RSAAlgorithm
-import requests
 from requests_oauthlib import OAuth2Session
 
 from .conf import (
@@ -55,7 +55,7 @@ class MicrosoftClient(OAuth2Session):
             scope=self._get_scopes(),
             state=state,
             redirect_uri=self._get_redirect_uri(request),
-            *args,
+            *args,  # noqa B026
             **kwargs,
         )
 
@@ -94,9 +94,7 @@ class MicrosoftClient(OAuth2Session):
         config = cache.get(CACHE_KEY_OPENID)
 
         if config is None:
-            config_url = self._config_url.format(
-                tenant=self.config.MICROSOFT_AUTH_TENANT_ID
-            )
+            config_url = self._config_url.format(tenant=self.config.MICROSOFT_AUTH_TENANT_ID)
             response = self.get(config_url)
 
             if response.ok:
@@ -137,9 +135,7 @@ class MicrosoftClient(OAuth2Session):
 
         if jwk is None:
             if allow_refresh:
-                logger.warn(
-                    "could not find public key for id_token, " "refreshing OIDC config"
-                )
+                logger.warn("could not find public key for id_token, " "refreshing OIDC config")
                 cache.delete(CACHE_KEY_JWKS)
                 cache.delete(CACHE_KEY_OPENID)
 
@@ -216,9 +212,7 @@ class MicrosoftClient(OAuth2Session):
                 "RpsTicket": "d={}".format(self.token["access_token"]),
             },
         }
-        response = requests.post(
-            self._xbox_token_url, data=json.dumps(params), headers=headers
-        )
+        response = requests.post(self._xbox_token_url, data=json.dumps(params), headers=headers)
 
         if response.status_code == 200:
             self.xbox_token = response.json()
@@ -265,9 +259,7 @@ class MicrosoftClient(OAuth2Session):
                     "SandboxId": "RETAIL",
                 },
             }
-            response = requests.post(
-                self._profile_url, data=json.dumps(params), headers=headers
-            )
+            response = requests.post(self._profile_url, data=json.dumps(params), headers=headers)
 
             if response.status_code == 200:
                 return response.json()["DisplayClaims"]["xui"][0]

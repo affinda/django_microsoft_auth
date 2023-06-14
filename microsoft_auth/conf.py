@@ -252,8 +252,8 @@ class SimpleConfig:
             # Fall back to defaults
             try:
                 val = self._defaults[attr]
-            except KeyError:
-                raise AttributeError
+            except KeyError as e:
+                raise AttributeError from e
 
         return val
 

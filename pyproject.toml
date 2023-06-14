@@ -1,86 +1,67 @@
-[build-system]
-requires = [
-  "setuptools >= 61.0.0", "setuptools_scm[toml]>=6.2",
-  "wheel",
-]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "django_microsoft_auth"
-description = "Simple app to enable Microsoft Account, Office 365 and Xbox Live authentcation as a Django authentcation backend."
+[tool.poetry]
+name = "django-microsoft-auth"
+version = "3.0.1"
+description = "Simple app to enable Microsoft Account, Office 365 and Xbox Live authentcation as a Django authentcation backend"
 authors = [
-    {name = "Christopher Bailey", email = "cbailey@mort.is"},
+    "Christopher Bailey <cbailey@mort.is>",
+    "Chris Culhane <cfculhane@gmail.com>",
 ]
-requires-python='>=3.8'
-dependencies=[
-  "django>=3.2",
-  "pyjwt[crypto]<3.0",
-  "requests-oauthlib",
-  "requests",
-]
-dynamic = ["version"]
+license = "MIT"
 readme = "README.rst"
-classifiers=[
-  "Development Status :: 5 - Production/Stable",
-  "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Framework :: Django :: 3.2",
-  "Framework :: Django :: 4.0",
-  "Framework :: Django :: 4.1",
+packages = [{ include = "microsoft_auth" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0",
+    "Framework :: Django :: 4.1",
 ]
-keywords = ["django_microsoft_auth"]
-license = {file = "LICENSE"}
+[tool.poetry.urls]
+"Documentation" = "https://django-microsoft-auth.readthedocs.io/en/latest/"
 
-[project.optional-dependencies]
-dev = [
-  "bandit[toml]",
-  "black",
-  "build",
-  "coverage",
-  "doc8",
-  "flake8-bugbear",
-  "flake8-builtins",
-  "flake8-commas",
-  "flake8-comprehensions",
-  "flake8",
-  "flit",
-  "furo",
-  "ipython",
-  "isort",
-  "pip-tools",
-  "pyproject-flake8",
-  "pytest-cov",
-  "pytest-django",
-  "pytest-rich",
-  "pytest",
-  "sphinx",
-]
-ql = [ "djangoql",]
 
-[project.urls]
-Documentation = "https://django-microsoft-auth.readthedocs.io/en/latest/"
-Source = "https://github.com/AngellusMortis/django_microsoft_auth"
+[tool.poetry.dependencies]
+python = "^3.8,<4.0"
+django = ">=3.2,<4.0"
+pyjwt = { version = "<3.0", extras = ["crypto"] }
+requests-oauthlib = "*"
+requests = "*"
+djangoql = { version = "^0.17.1", optional = true }
 
-[tool.setuptools.packages.find]
-include = ["microsoft_auth", "microsoft_auth.*"]
-exclude = ["tests", "tests.*"]
+[tool.poetry.extras]
+djangql = ["djangoql"]
+
+[tool.poetry.group.dev.dependencies]
+bandit = { extras = ["toml"], version = "^1.7.5" }
+black = "^23.3.0"
+coverage = "^7.2.7"
+doc8 = "^1.1.1"
+ruff = "^0.0.272"
+furo = "^2023.5.20"
+pytest-cov = "^4.1.0"
+pytest-django = "^4.5.2"
+pytest-rich = "^0.1.1"
+pytest = "^7.3.2"
+sphinx = "^7.0.1"
+
 
 [tool.bandit]
 exclude_dirs = [
-  "tests/*",
-  ".tox/*",
-  ".git/*",
+    "tests/*",
+    ".tox/*",
+    ".git/*",
 ]
 
 [tool.black]
-line-length = 88
-target-versions = 'py310'
+line-length = 120
+target-versions = 'py38'
 include = '\.pyi?$'
 exclude = '''
 
@@ -111,20 +92,33 @@ exclude = ".eggs, .git, .tox, build"
 ignore = "C812, W503, C816, C815, B008"
 max-line-length = 88
 
-[tool.isort]
-profile = "black"
-# will group `import x` and `from x import` of the same module.
-force_sort_within_sections = true
-known_first_party = [
-    "microsoft_auth",
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+src = ["microsoft_auth"]
+select = ["E", "F", "B", "I"] # 'B" enables flake8-bugbear
+ignore-init-module-imports = true # To stop it removeing __init__ imports with --fix
+show-fixes = true
+unfixable = [
+    "B007", # Disable autofix for unused loop variable as it's ugly - force users to fix it themselves
 ]
-combine_as_imports = true
+#ignore = ["C812", "W503", "C816", "C815", "B008"]
+
+[tool.ruff.isort]
+known-first-party = ["microsoft_auth"]
+
+
+[tool.ruff.per-file-ignores]
+# Ignore line-length in migrations
+"*/migrations/*" = ["E501"]
+"*/__init__.py" = ["F401"]
+
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.site.settings"
 addopts = "--rich --cov-config .coveragerc --cov-branch --cov-append --cov-report term-missing --color=yes --no-cov-on-fail --cov=microsoft_auth --durations=10 --maxfail=5"
 
-[tool.setuptools]
-include-package-data = true
 
-[tool.setuptools_scm]
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

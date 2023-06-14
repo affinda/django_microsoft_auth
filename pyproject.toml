@@ -50,6 +50,7 @@ pytest-django = "^4.5.2"
 pytest-rich = "^0.1.1"
 pytest = "^7.3.2"
 sphinx = "^7.0.1"
+pre-commit = "^3.3.3"
 
 
 [tool.bandit]

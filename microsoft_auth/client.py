@@ -81,6 +81,12 @@ class MicrosoftClient(OAuth2Session):
             host = settings.MICROSOFT_AUTH_REDIRECT_HOST or None
             callback = reverse("microsoft_auth:auth-callback", host=host)
             redirect = reverse("microsoft_auth:from-auth-redirect", host=host)
+
+            # Handle case if running on localhost - need to strip out host so that it starts with localhost://
+            if host and "localhost" in callback:
+                callback = callback.replace(f"{host}.", "")
+                redirect = redirect.replace(f"{host}.", "")
+
         else:
             from django.urls import reverse
 

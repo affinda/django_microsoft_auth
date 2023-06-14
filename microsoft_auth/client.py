@@ -3,9 +3,9 @@ import logging
 
 import jwt
 import requests
+from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.cache import cache
-from django.urls import reverse
 from jwt.algorithms import RSAAlgorithm
 from requests_oauthlib import OAuth2Session
 
@@ -74,19 +74,33 @@ class MicrosoftClient(OAuth2Session):
         return scope
 
     def _get_redirect_uri(self, request):
+        # Detect if django_hosts is being used, and use that
+        if "django_hosts" in settings.INSTALLED_APPS:
+            from django_hosts.resolvers import reverse
+
+            host = settings.MICROSOFT_AUTH_REDIRECT_HOST or None
+            callback = reverse("microsoft_auth:auth-callback", host=host)
+            redirect = reverse("microsoft_auth:from-auth-redirect", host=host)
+        else:
+            from django.urls import reverse
+
+            callback = reverse("microsoft_auth:auth-callback")
+            redirect = reverse("microsoft_auth:from-auth-redirect")
+
+        if not request or "redirect" not in request.path:
+            path = callback
+        else:
+            path = redirect
+
+        if "django_hosts" in settings.INSTALLED_APPS:
+            return path
+
         try:
             current_site = Site.objects.get_current(request)
         except Site.DoesNotExist:
             current_site = Site.objects.first()
 
         domain = current_site.domain
-        callback = reverse("microsoft_auth:auth-callback")
-        redirect = reverse("microsoft_auth:from-auth-redirect")
-        if not request or "redirect" not in request.path:
-            path = callback
-        else:
-            path = redirect
-
         return f"{get_scheme(request, self.config)}://{domain}{path}"
 
     @property

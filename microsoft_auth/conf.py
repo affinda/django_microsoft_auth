@@ -76,6 +76,11 @@ DEFAULT_CONFIG = {
             ),
             str,
         ),
+        "MICROSOFT_AUTH_REDIRECT_HOST": (
+            "",
+            _("""Host to use for Microsoft OAuth redirect, defaults to empty string"""),
+            str,
+        ),
         "MICROSOFT_AUTH_EXTRA_SCOPES": (
             "",
             _(
@@ -190,6 +195,7 @@ DEFAULT_CONFIG = {
             "MICROSOFT_AUTH_TENANT_ID",
             "MICROSOFT_AUTH_CLIENT_ID",
             "MICROSOFT_AUTH_CLIENT_SECRET",
+            "MICROSOFT_AUTH_REDIRECT_HOST",
             "MICROSOFT_AUTH_EXTRA_SCOPES",
             "MICROSOFT_AUTH_EXTRA_PARAMETERS",
             "MICROSOFT_AUTH_AUTO_CREATE",

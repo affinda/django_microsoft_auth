@@ -41,21 +41,23 @@ class AuthenticateCallbackView(View):
     def get_context_data(self, **kwargs):
         from django.conf import settings
         subdomain = None
+        scheme = get_scheme(self.request)
+        message_dict = {}
         if "django_hosts" in settings.INSTALLED_APPS:
             if "localhost" in self.request.get_host():
-                # we will have stripped the subdomain if localhost, as MS doesn't  like subdomains
+                # we will have stripped the subdomain if localhost, as MS doesn't like subdomains in the redirect_uri
                 subdomain = settings.MICROSOFT_AUTH_REDIRECT_HOST or ""
             host = self.request.get_host()  # includes port if required
 
             self.context = {
-                "base_url": f"{self.request.scheme}://{f'{subdomain}.' if subdomain else ''}{host}/",
+                "base_url": f"{scheme}://{f'{subdomain}.' if subdomain else ''}{host}/",
                 "message": {},
                 "subdomain": subdomain,
             }
+            message_dict["origin_with_subdomain"] = self.context["base_url"]
 
         else:
             domain = Site.objects.get_current(self.request).domain
-            scheme = get_scheme(self.request)
             self.context = {
                 "base_url": "{0}://{1}/".format(scheme, domain),
                 "message": {},
@@ -82,11 +84,8 @@ class AuthenticateCallbackView(View):
         if function is not None:
             self.context = function(self.request, self.context)
 
-        message_dict = {"microsoft_auth": self.context["message"]}
-        if "django_hosts" in settings.INSTALLED_APPS and settings.MICROSOFT_AUTH_REDIRECT_HOST:
-            subdomain = settings.MICROSOFT_AUTH_REDIRECT_HOST or ""
-            message_dict[
-                "origin_with_subdomain"] = f"{self.request.scheme}://{f'{subdomain}.' if subdomain else ''}{host}"
+        message_dict["microsoft_auth"] = self.context["message"]
+
         if self.request.user and hasattr(self.request.user, "session_set"):
             message_dict["sessionid"] = self.request.user.session_set.last().session_key
         self.context["message"] = mark_safe(json.dumps(message_dict))  # nosec

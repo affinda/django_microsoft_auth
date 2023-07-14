@@ -1,10 +1,19 @@
 /* jshint esnext: true */
+function setCookie(cname, cvalue, exdays) {
+  const d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  let expires = "expires=" + d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;domain=" +
+  window.location.hostname;
+}
+
 (function () {
     'use strict';
 
     class LoginController {
         constructor(options) {
             this._loginURL = options.authorization_url;
+            this._subdomain = options.subdomain
             this._loginWindow = null;
 
             // init event handlers
@@ -89,11 +98,15 @@
                 event = event.originalEvent;
             }
 
-            // verify the message is from us
-            let origin = window.location.protocol + '//' + window.location
-                .host;
+            // verify the message is from us, handling the subdomain manually here
+            let event_origin = event.origin
+            if (this._subdomain) {
+                event_origin = event.data.origin_with_subdomain;
+            }
 
-            if (event.origin === origin) {
+            let origin = window.location.protocol + '//' + window.location.host;
+
+            if (event_origin === origin) {
                 if (event.data.microsoft_auth) {
                     let data = event.data.microsoft_auth;
                     if (data.error) {
@@ -111,7 +124,9 @@
                     } else {
                         // redirect to next URL if it was provided
                         let new_path = this.parseGETParam('next') || '/admin';
-
+                        if (event.data.sessionid) {
+                            setCookie("sessionid", event.data.sessionid, 1);
+                        }
                         window.location = origin + new_path;
                     }
                 }

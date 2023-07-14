@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-
 from django.contrib.auth import authenticate, login
 from django.contrib.sites.models import Site
 from django.core.signing import BadSignature, SignatureExpired, loads
@@ -41,16 +40,17 @@ class AuthenticateCallbackView(View):
 
     def get_context_data(self, **kwargs):
         from django.conf import settings
-
+        subdomain = None
         if "django_hosts" in settings.INSTALLED_APPS:
-            subdomain = settings.MICROSOFT_AUTH_REDIRECT_HOST or ""
+            if "localhost" in self.request.get_host():
+                # we will have stripped the subdomain if localhost, as MS doesn't  like subdomains
+                subdomain = settings.MICROSOFT_AUTH_REDIRECT_HOST or ""
             host = self.request.get_host()  # includes port if required
-            if "localhost" in host and self.request.scheme == "http":
-                subdomain = ""  # e.g. Don't use admin.localhost as MS doens't like http
 
             self.context = {
                 "base_url": f"{self.request.scheme}://{f'{subdomain}.' if subdomain else ''}{host}/",
                 "message": {},
+                "subdomain": subdomain,
             }
 
         else:
@@ -59,6 +59,7 @@ class AuthenticateCallbackView(View):
             self.context = {
                 "base_url": "{0}://{1}/".format(scheme, domain),
                 "message": {},
+                "subdomain": "",
             }
 
         # validates state using Django CSRF system and sets next path value
@@ -81,7 +82,14 @@ class AuthenticateCallbackView(View):
         if function is not None:
             self.context = function(self.request, self.context)
 
-        self.context["message"] = mark_safe(json.dumps({"microsoft_auth": self.context["message"]}))  # nosec
+        message_dict = {"microsoft_auth": self.context["message"]}
+        if "django_hosts" in settings.INSTALLED_APPS and settings.MICROSOFT_AUTH_REDIRECT_HOST:
+            subdomain = settings.MICROSOFT_AUTH_REDIRECT_HOST or ""
+            message_dict[
+                "origin_with_subdomain"] = f"{self.request.scheme}://{f'{subdomain}.' if subdomain else ''}{host}"
+        if self.request.user and hasattr(self.request.user, "session_set"):
+            message_dict["sessionid"] = self.request.user.session_set.last().session_key
+        self.context["message"] = mark_safe(json.dumps(message_dict))  # nosec
         return self.context
 
     def _parse_state(self, state):

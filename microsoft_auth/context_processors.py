@@ -1,5 +1,6 @@
 import logging
 
+import urllib3
 from django.contrib.sites.models import Site
 from django.core.signing import dumps
 from django.middleware.csrf import get_token
@@ -18,6 +19,12 @@ def microsoft(request):
     from django.conf import settings
 
     login_type = None
+    subdomain = None
+    if "django_hosts" in settings.INSTALLED_APPS:
+        if request.host.name:
+            host = urllib3.util.parse_url(request.get_raw_uri()).host
+            if len(host.split(".")) > 1:
+                subdomain = host.split(".")[0]  # e.g. admin
     if config.MICROSOFT_AUTH_LOGIN_TYPE == LOGIN_TYPE_XBL:
         login_type = _("Xbox Live")
     else:
@@ -58,6 +65,7 @@ def microsoft(request):
             "microsoft_login_enabled": config.MICROSOFT_AUTH_LOGIN_ENABLED,
             "microsoft_authorization_url": mark_safe(auth_url),  # nosec
             "microsoft_login_type_text": login_type,
+            "subdomain": subdomain
         }
     return {
         "microsoft_login_enabled": config.MICROSOFT_AUTH_LOGIN_ENABLED,

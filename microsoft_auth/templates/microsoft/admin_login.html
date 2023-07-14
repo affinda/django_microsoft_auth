@@ -98,7 +98,8 @@
     document.addEventListener("DOMContentLoaded",
                               function(event) {
                                 window.microsoft.login = new window.microsoft.objects.LoginController({
-                                  'authorization_url': '{{ microsoft_authorization_url }}'
+                                  'authorization_url': '{{ microsoft_authorization_url }}',
+                                    'subdomain': '{{ subdomain }}',
                                 });
                               });
     </script>
